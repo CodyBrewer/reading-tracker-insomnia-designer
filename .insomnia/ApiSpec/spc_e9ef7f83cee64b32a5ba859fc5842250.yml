@@ -1,0 +1,234 @@
+_id: spc_e9ef7f83cee64b32a5ba859fc5842250
+type: ApiSpec
+parentId: wrk_56ad598e14d4435392678a162cb18858
+modified: 1612400339184
+created: 1612366128456
+fileName: reading-tracker
+contents: >
+  openapi: 3.0.1
+
+  info:
+    description: This is a server to use to with reading-tracker-client
+    version: 0.1.0
+    title: Reading Tracker
+    contact:
+      email: codybrewerdev@gmail.com
+      license:
+        name: MIT
+        url: https://en.wikipedia.org/wiki/MIT_License
+  tags:
+    - name: status
+      description: server status
+    - name: authentication
+      description: Operations about authentication
+    - name: profiles
+      description: Operetions about profiles
+    - name: reading lists
+      description: Access to reading lists
+
+                   
+  servers:
+    - name: depployed
+      url: https://reading-tracker-be.herokuapp.com/
+    - name: local server
+      url: localhost:1337/
+  components:
+    requestBodies:
+      RegisterUser:
+        description: User Object to register
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - avatar_url
+              properties:
+                username:
+                  type: string
+                  example: The_Riker
+                email:
+                  type: string
+                  example: william.t.riker@starfleet.federation
+                password:
+                  type: string
+                  example: '@ReallyG00dP@55w0rd'
+                avatar_url: 
+                  type: string
+                  example:
+                    https://upload.wikimedia.org/wikipedia/en/thumb/2/20/WilRiker.jpg/220px-WilRiker.jpg
+                public:
+                  type: boolean
+                  summary: sets if user is public or private to other users defaults to true if not passed in
+                  example: false
+      LoginUser:
+        descrption: User credentials to authenticate
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: The_Riker
+                password:
+                  type: string
+                  example: '@ReallyG00dP@55w0rd'
+    parameters:
+      ProfileId:
+        in: path
+        name: profileId
+        description: profile id of profile to request
+        schema:
+          type: string
+          required: true
+          example: 1d9dd170-8757-40ec-9ccf-11e4e3de27b1
+    schemas:
+      Token:
+        type: object
+        properties:
+          token:
+            type: string
+            description: This is a jwt token used for authentication on protected routes
+            example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+      PublicProfile:
+        type: object
+        properties:
+          username:
+            type: string
+            example: The_Riker
+          uuid:
+            type: string
+            format: uuid
+            example: 7a97e42c-124c-4e2c-8109-c5ce6e5f77a4
+          avatar_url:  
+            type: string
+            format: url
+            example: https://upload.wikimedia.org/wikipedia/en/thumb/2/20/WilRiker.jpg/220px-WilRiker.jpg
+    responses:
+      UnauthorizedError:
+        description: Authentication token is missing or invalid
+      NotFoundError:
+        description: Not Found
+  paths:
+    /status:
+      get:
+        tags:
+          - status
+        description: Get Status of the server
+        responses:
+          "200":
+            description: status is up
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      desription: server status
+                      example: up
+                    current_time:
+                      type: string
+                      format: date-time
+                      example: Wed 13 Jan 2021 23:04:22 GMT
+    /auth/register:
+      post:
+        description: Register New User
+        tags:
+          - authentication
+        requestBody:
+          $ref: '#/components/requestBodies/RegisterUser'
+        responses:
+          "201":
+            description: token for newly registerd user
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Token'
+          "400":
+            description: property missing from request body
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    error: 
+                      type: string
+                      example: 'property missing from request body ${property}'
+    /auth/login:
+      post:
+        description: authenticate existing user
+        tags:
+          - authentication
+        requestBody:
+            $ref: '#/components/requestBodies/LoginUser'
+        responses:
+          "200":
+            description: token for authenticated user
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Token'
+          "401":
+            description: Incorrect username or password
+            content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   error:
+                     type: string
+                     example: Incorrect username or password
+          "400":
+            description: Username or password missing from request body
+            content:
+             application/json:
+               schema:
+                 type: object
+                 properties:
+                   error:
+                     type: striing
+                     example: Username or password missing from request body
+    /profiles/:
+      get:
+        description : Get all profile information for all public profiles
+        tags:
+          - profiles
+        responses:
+          "200":
+            description: Array of public profile information
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PublicProfile'
+          "401":
+            $ref: '#/components/responses/UnauthorizedError'
+    /profiles/:profileId/:
+      get:
+        description: Get a profiles information
+        tags:
+          - profiles
+        parameters:
+          - $ref: '#/components/parameters/ProfileId'
+        responses:
+          "200":
+            description: Profile Information
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/PublicProfile'
+          "401":
+            $ref: '#/components/responses/UnauthorizedError'
+          "403":
+            description: profile is not public
+          "404":
+            $ref: '#/components/responses/NotFoundError'
+contentType: yaml

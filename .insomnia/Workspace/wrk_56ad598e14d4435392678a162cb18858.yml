@@ -1,0 +1,8 @@
+_id: wrk_56ad598e14d4435392678a162cb18858
+type: Workspace
+parentId: null
+modified: 1612378616330
+created: 1612366128451
+name: Reading Tracker 0.1.0
+description: This is a server to use to with reading-tracker-client
+scope: spec
